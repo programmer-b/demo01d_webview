@@ -1,8 +1,8 @@
-import 'dart:convert';
-import 'dart:developer';
-
+import 'package:demo01d_webview/prepare_screen.dart';
+import 'package:demo01d_webview/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:nb_utils/nb_utils.dart' hide log;
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,12 +15,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter web demo',
-      theme: ThemeData(
-        primarySwatch: Colors.red,
+    return ChangeNotifierProvider(
+      create: (context) => MyProvider(),
+      child: MaterialApp(
+        title: 'Flutter web demo',
+        theme:
+            ThemeData(primarySwatch: Colors.red, brightness: Brightness.dark),
+        home: const MyHomePage(title: 'Flutter Demo Home Page'),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
@@ -35,31 +37,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  late TextEditingController controller;
+  late String url = "https://ww1.goojara.to/mN9by4";
+
   @override
   void initState() {
     super.initState();
-  }
+    controller = TextEditingController(text: url);
 
-  InAppWebViewController? webViewController;
-  InAppWebViewController? webViewPopupController;
-  InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
-      crossPlatform: InAppWebViewOptions(
-        useShouldOverrideUrlLoading: true,
-        mediaPlaybackRequiresUserGesture: false,
-        javaScriptCanOpenWindowsAutomatically: true,
-      ),
-      android: AndroidInAppWebViewOptions(
-          supportMultipleWindows: true, useShouldInterceptRequest: true));
-  InAppWebViewGroupOptions options2 = InAppWebViewGroupOptions(
-      crossPlatform: InAppWebViewOptions(
-          useShouldOverrideUrlLoading: true,
-          mediaPlaybackRequiresUserGesture: false,
-          // javaScriptCanOpenWindowsAutomatically: true,
-          useShouldInterceptAjaxRequest: true,
-          useShouldInterceptFetchRequest: true),
-      android: AndroidInAppWebViewOptions(
-          // supportMultipleWindows: true,
-          useShouldInterceptRequest: true));
+    setOrientationPortrait();
+    exitFullScreen();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,87 +55,37 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: InAppWebView(
-        initialUrlRequest: URLRequest(
-            url: Uri.parse(
-                "https://www.wootly.ch/g/yld1SwAYm9vkSY_4rGWmxw/1666793155/2360585336/F5SAEEE4")),
-        initialOptions: options2,
-        onWebViewCreated: (controller) {
-          webViewController = controller;
-        },
-        androidShouldInterceptRequest: (controller, request) async {
-          log(" androidShouldInterceptRequest: $request");
-          return null;
-        },
-        onAjaxReadyStateChange: (controller, ajaxRequest) async {
-          log("onAjaxReadyStateChange: $ajaxRequest");
-          return AjaxRequestAction.PROCEED;
-        },
-        shouldInterceptAjaxRequest: (controller, ajaxRequest) async {
-          log("shouldInterceptAjaxRequest: $ajaxRequest");
-          return ajaxRequest;
-        },
-        onAjaxProgress:
-            (InAppWebViewController controller, AjaxRequest ajaxRequest) async {
-          log("STATUS CODE", error: ajaxRequest.status);
-          return AjaxRequestAction.PROCEED;
-        },
-        shouldInterceptFetchRequest: (controller, fetchRequest) async {
-          log("shouldInterceptFetchRequest: $fetchRequest");
-          return fetchRequest;
-        },
-        onReceivedServerTrustAuthRequest: (controller, challenge) async {
-          log("onReceivedServerTrustAuthRequest: $challenge");
-          return ServerTrustAuthResponse(
-              action: ServerTrustAuthResponseAction.PROCEED);
-        },
-        onCreateWindow: (controller, createWindowRequest) async {
-          log("onCreateWindow");
-          showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                content: SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: 400,
-                  child: InAppWebView(
-                    // Setting the windowId property is important here!
-                    windowId: createWindowRequest.windowId,
-                    initialOptions: InAppWebViewGroupOptions(
-                      crossPlatform: InAppWebViewOptions(),
-                    ),
-                    onWebViewCreated: (InAppWebViewController controller) {
-                      webViewPopupController = controller;
-                    },
-                    onLoadStart: (InAppWebViewController controller, Uri? url) {
-                      log("onLoadStart popup $url");
-                    },
-                    onLoadStop: (InAppWebViewController controller, Uri? url) {
-                      log("onLoadStop popup $url");
-                    },
-                  ),
-                ),
-              );
-            },
-          );
-
-          return true;
-        },
-        onLoadStart: (controller, url) {},
-        shouldOverrideUrlLoading: (controller, navigationAction) async {
-          var uri = navigationAction.request.body;
-          log("shouldOverrideUrlLoading: $uri");
-
-          return NavigationActionPolicy.CANCEL;
-        },
-        onLoadStop: (controller, url) async {},
-        onProgressChanged: (controller, progress) {},
-        onUpdateVisitedHistory: (controller, url, androidIsReload) {},
-        onConsoleMessage: (controller, consoleMessage) {
-          log("onConsoleMessage: ${jsonDecode("$consoleMessage")}");
-        },
+      body: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _textForm(),
+            _divide(),
+            _playButton(),
+            _divide(),
+            _downloadButton()
+          ],
+        ).paddingAll(16),
       ),
-
     );
   }
+
+  Widget _textForm() => TextFormField(
+        controller: controller,
+        decoration: const InputDecoration(border: OutlineInputBorder()),
+      );
+
+  Widget _playButton() => SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+          onPressed: () =>
+              PreparingScreen(url: controller.text).launch(context),
+          child: const Text("Watch Now")));
+
+  Widget _downloadButton() => SizedBox(
+      width: double.infinity,
+      child:
+          ElevatedButton(onPressed: () {}, child: const Text("Download Now")));
+
+  Widget _divide() => 10.height;
 }
