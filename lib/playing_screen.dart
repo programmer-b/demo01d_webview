@@ -1,5 +1,7 @@
+import 'package:demo01d_webview/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:nb_utils/nb_utils.dart';
+import 'package:provider/provider.dart';
 
 class PlayingScreen extends StatefulWidget {
   const PlayingScreen({super.key, required this.masterUrl});
@@ -15,14 +17,13 @@ class _PlayingScreenState extends State<PlayingScreen> {
   @override
   void initState() {
     super.initState();
-    init();
+    Future.delayed(Duration.zero, () => context.read<MyProvider>().init());
   }
 
-  void init() {
-    setOrientationLandscape();
-    enterFullScreen();
+  @override
+  dispose() {
+    super.dispose();
   }
-
 
   @override
   Widget build(BuildContext context) {

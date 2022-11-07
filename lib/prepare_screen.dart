@@ -16,16 +16,7 @@ class PreparingScreen extends StatefulWidget {
 }
 
 class _PreparingScreenState extends State<PreparingScreen> {
-  @override
-  void initState() {
-    super.initState();
-    init();
-  }
 
-  void init() {
-    setOrientationLandscape();
-    enterFullScreen();
-  }
 
   late String url = widget.url;
   @override
